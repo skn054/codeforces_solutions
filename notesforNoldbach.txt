@@ -1,0 +1,95 @@
+
+
+value of count after returning from function is zero. can u explain why?
+
+Of course. This is a classic and very common mistake for programmers new to C/C++. The problem is a subtle but critical detail of operator precedence.
+
+The line at the heart of the issue is:
+
+Generated c
+*count++;
+
+The Problem: Operator Precedence
+
+In C, the ++ (postfix increment) operator has a higher precedence than the * (dereference) operator.
+
+Therefore, the compiler interprets *count++ not as "increment the value pointed to by count", but as:
+
+*(count++)
+
+Let's break down what this actually does:
+
+count++: This expression increments the pointer itself, not the value it points to. count was pointing to the memory address of the count variable in your calling function. Now, it points to the memory location immediately after it.
+
+*(): The * then dereferences the original value of the pointer (before it was incremented, because this is a post-fix increment). It reads the integer value from the correct memory location.
+
+The Result: The value that was read is then discarded. It's not stored anywhere, and the original count variable in your main function is never modified.
+
+In simple terms: You are moving the pointer to point to a new, random memory location, not changing the value at the location it was supposed to be pointing to.
+
+The count variable in your main/calling function remains at 0 for the entire duration of the program.
+
+The Solution: Use Parentheses
+
+To get the behavior you want, you must force the dereference operation to happen before the increment. You do this with parentheses:
+
+Generated c
+(*count)++;
+IGNORE_WHEN_COPYING_START
+content_copy
+download
+Use code with caution.
+C
+IGNORE_WHEN_COPYING_END
+
+Let's break down the correct version:
+
+(*count): The parentheses force this part to be evaluated first. The * dereferences the pointer count, getting the actual integer value that count points to.
+
+++: The ++ operator then increments this integer value.
+
+This correctly modifies the original count variable that exists outside of your sieve_of_eratosthenes function.
+
+Corrected Code
+
+Your function should look like this:
+
+Generated c
+void sieve_of_eratosthenes(int *arr, int n, int k, int *count) {
+    // Unused parameter 'k' can be removed if not needed.
+    
+    // It's good practice to initialize the value you're modifying,
+    // though it's already 0 from the calling function.
+    // *count = 0; 
+    
+    arr[0] = 0;
+    arr[1] = 0;
+    for (int i = 2; i <= n; i++) {
+        if (arr[i] == 1) {
+            // THE FIX: Use parentheses to increment the value, not the pointer.
+            (*count)++; 
+            
+            // This is a clearer, and often better, alternative:
+            // *count = *count + 1;
+
+            // The printf("inside loop") is fine for debugging but will slow
+            // down the algorithm and clutter the output.
+            
+            for (int j = i * i; j <= n; j = j + i) {
+                arr[j] = 0;
+            }
+        }
+    }
+    // This will now print the correct final count.
+    printf("Final count inside function: %d\n", *count);
+}
+IGNORE_WHEN_COPYING_START
+content_copy
+download
+Use code with caution.
+C
+IGNORE_WHEN_COPYING_END
+Summary
+Expression	How it's Parsed	What it Does
+*count++	*(count++)	Incorrect: Increments the pointer count. Reads the original value and discards it.
+(*count)++	(*count)++	Correct: Dereferences the pointer to get the value, then increments the value.
